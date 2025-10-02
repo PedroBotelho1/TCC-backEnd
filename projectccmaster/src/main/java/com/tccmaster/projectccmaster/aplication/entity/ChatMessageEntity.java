@@ -8,11 +8,14 @@ import java.util.UUID;
 @Table(name = "mensagens_chat")
 public class ChatMessageEntity {
 
-    // --- CORREÇÃO ADICIONADA AQUI ---
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    // ########## INÍCIO DA CORREÇÃO ##########
+    // A estratégia foi alterada de AUTO para UUID.
+    // Isso instrui o JPA a usar o mecanismo padrão de geração de UUID,
+    // que é compatível com o PostgreSQL e resolverá o problema de salvamento.
+    @GeneratedValue(strategy = GenerationType.UUID)
+    // ########## FIM DA CORREÇÃO ##########
     private UUID id;
-    // --- FIM DA CORREÇÃO ---
 
     @Column(name = "room_id", nullable = false)
     private String roomId;
@@ -43,7 +46,6 @@ public class ChatMessageEntity {
         this.timestamp = LocalDateTime.now();
     }
 
-    // --- GETTERS E SETTERS PARA O ID ADICIONADOS ---
     public UUID getId() {
         return id;
     }
@@ -51,10 +53,7 @@ public class ChatMessageEntity {
     public void setId(UUID id) {
         this.id = id;
     }
-    // --- FIM DA ADIÇÃO ---
 
-
-    // Getters e Setters existentes...
     public String getRoomId() { return roomId; }
     public void setRoomId(String roomId) { this.roomId = roomId; }
     public String getMessage() { return message; }

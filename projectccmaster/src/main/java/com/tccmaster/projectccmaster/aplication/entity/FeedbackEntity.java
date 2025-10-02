@@ -1,7 +1,8 @@
+// Em: src/main/java/com/tccmaster/projectccmaster/aplication/entity/FeedbackEntity.java
 package com.tccmaster.projectccmaster.aplication.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime; // 1. IMPORTE O LOCALDATETIME
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -12,22 +13,25 @@ public class FeedbackEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    // ESTE CAMPO SERÁ REMOVIDO OU REAPROVEITADO
     private String nome;
+
     private int avaliacao;
     private String comentario;
-
-    // 2. ADICIONE O NOVO CAMPO
     private LocalDateTime dataCriacao;
 
-    @ManyToOne
+    // --- NOVO CAMPO ---
+    private String tipo; // Ex: "ATENDIMENTO", "PLATAFORMA"
+
+    @ManyToOne // Já é opcional por padrão
     @JoinColumn(name = "usuario_id")
     private UsuarioEntity usuario;
 
-    @ManyToOne
+    @ManyToOne // Já é opcional por padrão
     @JoinColumn(name = "tecnico_id")
     private TecnicoEntity tecnico;
 
-    // Getters e Setters
+    // Getters e Setters...
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public String getNome() { return nome; }
@@ -40,9 +44,10 @@ public class FeedbackEntity {
     public void setUsuario(UsuarioEntity usuario) { this.usuario = usuario; }
     public TecnicoEntity getTecnico() { return tecnico; }
     public void setTecnico(TecnicoEntity tecnico) { this.tecnico = tecnico; }
-
-    // 3. ADICIONE OS GETTERS E SETTERS PARA O NOVO CAMPO
     public LocalDateTime getDataCriacao() { return dataCriacao; }
     public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
-}
 
+    // --- GETTERS E SETTERS PARA O NOVO CAMPO ---
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+}

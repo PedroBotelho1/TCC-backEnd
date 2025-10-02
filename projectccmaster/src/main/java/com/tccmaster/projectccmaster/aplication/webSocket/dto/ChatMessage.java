@@ -1,65 +1,27 @@
-// Arquivo: projectccmaster/src/main/java/com/tccmaster/projectccmaster/aplication/webSocket/dto/ChatMessage.java
-
 package com.tccmaster.projectccmaster.aplication.webSocket.dto;
 
 public class ChatMessage {
-    private String id;        // ADICIONADO
+    private String id;
     private String message;
     private String user;
-    private String userId;    // ADICIONADO
-    private String timestamp; // ADICIONADO
+    private String userId;
+    private String timestamp;
+    private String roomId; // CAMPO ADICIONADO
 
-    // Adicione construtores, getters e setters para os novos campos
+    // Construtores...
+    public ChatMessage() {}
 
-    public ChatMessage() {
-    }
-
-    public ChatMessage(String id, String message, String user, String userId, String timestamp) {
-        this.id = id;
-        this.message = message;
-        this.user = user;
-        this.userId = userId;
-        this.timestamp = timestamp;
-    }
-
-    // --- GETTERS E SETTERS ---
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getUser() {
-        return user;
-    }
-
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(String timestamp) {
-        this.timestamp = timestamp;
-    }
+    // Getters e Setters (incluindo para roomId)
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+    public String getUser() { return user; }
+    public void setUser(String user) { this.user = user; }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+    public String getTimestamp() { return timestamp; }
+    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+    public String getRoomId() { return roomId; }
+    public void setRoomId(String roomId) { this.roomId = roomId; }
 }
