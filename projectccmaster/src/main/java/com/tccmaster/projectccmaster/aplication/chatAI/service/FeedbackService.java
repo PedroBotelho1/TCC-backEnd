@@ -1,4 +1,4 @@
-// Project_TccMaster-main/projectccmaster/src/main/java/com/tccmaster/projectccmaster/aplication/chatAI/service/FeedbackService.java
+// Em: src/main/java/com/tccmaster/projectccmaster/aplication/chatAI/service/FeedbackService.java
 package com.tccmaster.projectccmaster.aplication.chatAI.service;
 
 import com.tccmaster.projectccmaster.aplication.entity.FeedbackEntity;
@@ -8,10 +8,10 @@ import com.tccmaster.projectccmaster.aplication.repository.FeedbackRepository;
 import com.tccmaster.projectccmaster.aplication.repository.TecnicoRepository;
 import com.tccmaster.projectccmaster.aplication.webSocket.dto.FeedbackDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetails; // IMPORTAR
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
-
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,44 +22,59 @@ public class FeedbackService {
 
     @Autowired
     private FeedbackRepository feedbackRepository;
-
     @Autowired
-    private TecnicoRepository tecnicoRepository; // Adicionado para buscar o técnico
+    private TecnicoRepository tecnicoRepository;
 
-    public FeedbackEntity createFeedback(FeedbackDTO feedbackDTO, UsuarioEntity usuario) {
+    public FeedbackEntity createFeedback(FeedbackDTO feedbackDTO, UserDetails principal) {
         FeedbackEntity feedback = new FeedbackEntity();
 
-        // Lógica condicional baseada no tipo de feedback
+        // --- LÓGICA DE AUTORIA CORRIGIDA ---
+        if (principal instanceof UsuarioEntity) {
+            feedback.setUsuario((UsuarioEntity) principal);
+            feedback.setAutorTecnico(null);
+        } else if (principal instanceof TecnicoEntity) {
+            if (!"PLATAFORMA".equalsIgnoreCase(feedbackDTO.tipo())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Técnicos só podem enviar feedbacks sobre a plataforma.");
+            }
+            feedback.setUsuario(null);
+            feedback.setAutorTecnico((TecnicoEntity) principal); // <-- CORREÇÃO CRÍTICA: Salva o técnico autor
+        } else {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tipo de usuário inválido.");
+        }
+
+        // ... (o resto do método createFeedback continua igual)
         if ("ATENDIMENTO".equalsIgnoreCase(feedbackDTO.tipo())) {
             if (feedbackDTO.tecnicoId() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tecnicoId é obrigatório para feedback de atendimento.");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "tecnicoId é obrigatório.");
             }
-            // Busca o técnico pelo ID fornecido no DTO
-            TecnicoEntity tecnico = tecnicoRepository.findById(feedbackDTO.tecnicoId())
+            TecnicoEntity tecnicoAvaliado = tecnicoRepository.findById(feedbackDTO.tecnicoId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Técnico não encontrado"));
-
-            feedback.setTecnico(tecnico); // Associa o técnico ao feedback
-            feedback.setNome(tecnico.getNome()); // Guarda o nome do técnico para fácil acesso
-
+            feedback.setTecnico(tecnicoAvaliado);
+            feedback.setNome(tecnicoAvaliado.getNome());
         } else if ("PLATAFORMA".equalsIgnoreCase(feedbackDTO.tipo())) {
-            feedback.setTecnico(null); // Nenhum técnico associado
-            feedback.setNome("Plataforma"); // Indica que o feedback é sobre a plataforma
-
+            feedback.setTecnico(null);
+            feedback.setNome("Plataforma");
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tipo de feedback inválido.");
         }
-
         feedback.setAvaliacao(feedbackDTO.avaliacao());
         feedback.setComentario(feedbackDTO.comentario());
-        feedback.setUsuario(usuario); // Associa o usuário que enviou o feedback
         feedback.setDataCriacao(LocalDateTime.now());
-        feedback.setTipo(feedbackDTO.tipo().toUpperCase()); // Salva o tipo
-
+        feedback.setTipo(feedbackDTO.tipo().toUpperCase());
         return feedbackRepository.save(feedback);
     }
 
     public List<FeedbackEntity> getFeedbacksByUsuario(UUID usuarioId) {
         return feedbackRepository.findByUsuarioId(usuarioId);
+    }
+
+    public List<FeedbackEntity> getFeedbacksByTecnico(UUID tecnicoId) {
+        return feedbackRepository.findByTecnicoId(tecnicoId);
+    }
+
+    // --- NOVO MÉTODO ADICIONADO ---
+    public List<FeedbackEntity> getFeedbacksSentByTecnico(UUID tecnicoId) {
+        return feedbackRepository.findByAutorTecnicoId(tecnicoId);
     }
 
     public List<FeedbackEntity> getAllFeedbacks() {

@@ -2,6 +2,8 @@
 package com.tccmaster.projectccmaster.aplication.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -13,22 +15,27 @@ public class FeedbackEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    // ESTE CAMPO SERÁ REMOVIDO OU REAPROVEITADO
     private String nome;
-
     private int avaliacao;
     private String comentario;
     private LocalDateTime dataCriacao;
+    private String tipo;
 
-    // --- NOVO CAMPO ---
-    private String tipo; // Ex: "ATENDIMENTO", "PLATAFORMA"
-
-    @ManyToOne // Já é opcional por padrão
-    @JoinColumn(name = "usuario_id")
+    @ManyToOne
+    @JoinColumn(name = "usuario_id") // Representa o AUTOR, se for um usuário
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private UsuarioEntity usuario;
 
-    @ManyToOne // Já é opcional por padrão
-    @JoinColumn(name = "tecnico_id")
+    // --- NOVO CAMPO ADICIONADO ---
+    @ManyToOne
+    @JoinColumn(name = "autor_tecnico_id") // Representa o AUTOR, se for um técnico
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private TecnicoEntity autorTecnico;
+
+
+    @ManyToOne
+    @JoinColumn(name = "tecnico_id") // Representa quem está sendo AVALIADO
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private TecnicoEntity tecnico;
 
     // Getters e Setters...
@@ -46,8 +53,10 @@ public class FeedbackEntity {
     public void setTecnico(TecnicoEntity tecnico) { this.tecnico = tecnico; }
     public LocalDateTime getDataCriacao() { return dataCriacao; }
     public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
-
-    // --- GETTERS E SETTERS PARA O NOVO CAMPO ---
     public String getTipo() { return tipo; }
     public void setTipo(String tipo) { this.tipo = tipo; }
+
+    // --- GETTERS E SETTERS PARA O NOVO CAMPO ---
+    public TecnicoEntity getAutorTecnico() { return autorTecnico; }
+    public void setAutorTecnico(TecnicoEntity autorTecnico) { this.autorTecnico = autorTecnico; }
 }

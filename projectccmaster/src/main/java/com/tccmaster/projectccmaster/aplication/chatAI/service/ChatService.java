@@ -1,3 +1,5 @@
+// Em: src/main/java/com/tccmaster/projectccmaster/aplication/chatAI/service/ChatService.java
+
 package com.tccmaster.projectccmaster.aplication.chatAI.service;
 
 import com.tccmaster.projectccmaster.aplication.chatAI.form.ChatForm;
@@ -5,7 +7,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value; // Make sure this import is here
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -16,13 +18,15 @@ public class ChatService {
     @Autowired
     private RestTemplate restTemplate;
 
-    // This reads the key from application.properties
     @Value("${gemini.api.key}")
     private String apiKey;
 
     public ChatForm generateContent(String requestBody) {
-        // Correct Model Name and URL construction
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + apiKey;
+
+        // CORREÇÃO FINAL: Usando o nome exato do modelo da sua lista.
+        String modelName = "gemini-2.0-flash";
+
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + apiKey;
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
@@ -30,7 +34,7 @@ public class ChatService {
         HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
 
         ResponseEntity<String> response = restTemplate.exchange(
-                url, // Using the corrected URL
+                url,
                 HttpMethod.POST,
                 requestEntity,
                 String.class

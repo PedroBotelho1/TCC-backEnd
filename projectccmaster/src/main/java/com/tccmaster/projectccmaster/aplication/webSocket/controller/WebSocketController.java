@@ -1,6 +1,5 @@
 package com.tccmaster.projectccmaster.aplication.webSocket.controller;
 
-
 import com.tccmaster.projectccmaster.aplication.Service.ChatManagementService;
 import com.tccmaster.projectccmaster.aplication.webSocket.dto.ChatMessage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +7,7 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
+
 
 @Controller
 public class WebSocketController {
@@ -18,25 +18,18 @@ public class WebSocketController {
     @MessageMapping("/chat/{roomId}")
     @SendTo("/topic/{roomId}")
     public ChatMessage chat(@DestinationVariable String roomId, ChatMessage message) {
-        // Extrai o ID do técnico a partir do ID da sala
-        String tecnicoId = extrairTecnicoIdDoRoomId(roomId);
-
-        // Adiciona o roomId ao objeto da mensagem para ser usado no service
+        // Adiciona o roomId na mensagem
         message.setRoomId(roomId);
 
-        // Notifica o serviço para processar a mensagem (criar ou atualizar o chamado)
-        chatManagementService.processarMensagem(tecnicoId, message);
+        // Apenas processa e salva a mensagem no banco
+        chatManagementService.processarMensagem(message);
 
-        // Retorna a mensagem para ser enviada a todos os inscritos no tópico
+        // Retorna a mensagem para todos os inscritos
         return message;
     }
 
-    /**
-     * CORREÇÃO: Método robusto para extrair o ID do técnico do ID da sala.
-     * Assume que o formato do roomId é "prefixo-uuidUsuario-uuidTecnico".
-     * @param roomId O ID da sala de chat.
-     * @return O ID do técnico (os últimos 36 caracteres).
-     */
+    // O método extrairTecnicoIdDoRoomId não é mais necessário aqui.
+
     private String extrairTecnicoIdDoRoomId(String roomId) {
         // A lógica assume que o ID do técnico são os últimos 36 caracteres do roomId,
         // que corresponde ao formato de um UUID.

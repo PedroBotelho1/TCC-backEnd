@@ -1,63 +1,67 @@
+// Em: src/main/java/com/tccmaster/projectccmaster/aplication/Service/ChatManagementService.java
 package com.tccmaster.projectccmaster.aplication.Service;
 
+import com.tccmaster.projectccmaster.aplication.entity.ChatMessageEntity;
+import com.tccmaster.projectccmaster.aplication.repository.ChatRepository;
 import com.tccmaster.projectccmaster.aplication.webSocket.dto.ChatMessage;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 public class ChatManagementService {
 
-    // Usando ConcurrentHashMap para segurança em ambientes com múltiplas threads
-    private final Map<String, List<Map<String, String>>> conversasPorTecnico = new ConcurrentHashMap<>();
+    @Autowired
+    private ChatRepository chatRepository;
 
-    /**
-     * Retorna a lista de conversas (chamados) para um técnico específico.
-     * @param tecnicoId O ID do técnico.
-     * @return A lista de conversas.
-     */
+    // ESTE MÉTODO AGORA BUSCA OS CHAMADOS DIRETAMENTE DO BANCO
     public List<Map<String, String>> getConversasParaTecnico(String tecnicoId) {
-        return conversasPorTecnico.getOrDefault(tecnicoId, new ArrayList<>());
+        // Encontra todas as mensagens salvas
+        List<ChatMessageEntity> todasAsMensagens = chatRepository.findAll();
+
+        // Agrupa as mensagens por 'roomId' e depois formata para a lista de chamados
+        return todasAsMensagens.stream()
+                // Filtra apenas as conversas que pertencem a este técnico
+                .filter(msg -> msg.getRoomId() != null && msg.getRoomId().endsWith(tecnicoId))
+                // Agrupa por sala
+                .collect(Collectors.groupingBy(ChatMessageEntity::getRoomId))
+                // Transforma cada grupo em um único objeto de "chamado"
+                .values().stream()
+                .map(mensagensDaSala -> {
+                    // Pega a mensagem mais recente para exibir como "lastMessage"
+                    ChatMessageEntity ultimaMensagem = mensagensDaSala.stream()
+                            .max((m1, m2) -> m1.getTimestamp().compareTo(m2.getTimestamp()))
+                            .orElse(null);
+
+                    if (ultimaMensagem == null) return null;
+
+                    // Monta o objeto que o frontend espera
+                    return Map.of(
+                            "usuarioId", ultimaMensagem.getUserId(),
+                            "usuarioNome", ultimaMensagem.getUser(),
+                            "roomId", ultimaMensagem.getRoomId(),
+                            "lastMessage", ultimaMensagem.getMessage(),
+                            "timestamp", ultimaMensagem.getTimestamp().toString()
+                    );
+                })
+                .filter(map -> map != null)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Processa uma mensagem recebida via WebSocket.
-     * Se for a primeira mensagem de um usuário para um técnico, cria um novo "chamado".
-     * Se não, apenas atualiza a última mensagem e o timestamp.
-     * @param tecnicoId O ID do técnico associado à sala.
-     * @param message O objeto da mensagem recebida.
-     */
-    public void processarMensagem(String tecnicoId, ChatMessage message) {
-        if (tecnicoId == null || tecnicoId.trim().isEmpty()) {
-            return; // Não faz nada se não houver um ID de técnico
-        }
+    // ESTE MÉTODO AGORA APENAS SALVA A MENSAGEM NO BANCO
+    public void processarMensagem(ChatMessage message) {
+        ChatMessageEntity entity = new ChatMessageEntity();
+        entity.setRoomId(message.getRoomId());
+        entity.setMessage(message.getMessage());
+        entity.setUser(message.getUser());
+        entity.setUserId(message.getUserId());
+        entity.setTimestamp(LocalDateTime.now());
+        // A propriedade 'offline' pode ser usada no futuro se necessário
 
-        List<Map<String, String>> conversas = conversasPorTecnico.computeIfAbsent(tecnicoId, k -> new ArrayList<>());
-
-        // Procura se já existe uma conversa com este usuário
-        var conversaExistente = conversas.stream()
-                .filter(conv -> conv.get("usuarioId").equals(message.getUserId()))
-                .findFirst();
-
-        if (conversaExistente.isPresent()) {
-            // Se a conversa já existe, atualiza a última mensagem e o timestamp
-            Map<String, String> conversa = conversaExistente.get();
-            conversa.put("lastMessage", message.getMessage());
-            conversa.put("timestamp", new Date().toString());
-        } else {
-            // Se for a primeira mensagem, cria um novo registro de conversa
-            Map<String, String> novaConversa = new HashMap<>();
-            novaConversa.put("usuarioId", message.getUserId());
-            novaConversa.put("usuarioNome", message.getUser());
-            novaConversa.put("roomId", message.getRoomId()); // Armazena o roomId
-            novaConversa.put("lastMessage", message.getMessage());
-            novaConversa.put("timestamp", new Date().toString());
-            conversas.add(novaConversa);
-        }
+        chatRepository.save(entity);
     }
 }
